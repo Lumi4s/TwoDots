@@ -1,0 +1,14 @@
+pack.png
+size:1024,256
+filter:Linear,Linear
+repeat:none
+dot
+bounds:143,13,128,128
+ring
+bounds:1,1,140,140
+square
+bounds:403,13,128,128
+uimenu
+bounds:533,13,128,128
+uisquare
+bounds:273,13,128,128
