@@ -25,7 +25,7 @@ public class TwoDots extends Game {
         atlas = new TextureAtlas(Gdx.files.internal("pack.atlas"));
         font = new BitmapFont(Gdx.files.internal("font.fnt"));
         font.setUseIntegerPositions(false);
-        font.getData().setScale(0.006f);
+        font.getData().setScale(0.0043f);
         font.getRegion().getTexture().setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear);
 
         inGame = new InGame(this);

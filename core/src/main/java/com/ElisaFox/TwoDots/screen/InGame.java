@@ -4,6 +4,7 @@ import com.ElisaFox.TwoDots.TwoDots;
 import com.ElisaFox.TwoDots.objects.ColorType;
 import com.ElisaFox.TwoDots.objects.Dot;
 import com.ElisaFox.TwoDots.objects.GameBoard;
+import com.ElisaFox.TwoDots.objects.LevelGoals;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.InputAdapter;
 import com.badlogic.gdx.Screen;
@@ -38,6 +39,8 @@ public class InGame implements Screen {
     private Vector2 currentTouch;
     private ShapeRenderer shapeRenderer;
     private boolean isDragging;
+    private boolean isSquared;
+    private LevelGoals goals;
 
     private static final Color DOT_BLUE = new Color(0.337f, 0.706f, 0.914f, 1f);
     private static final Color DOT_RED = new Color(0.902f, 0.298f, 0.235f, 1f);
@@ -78,15 +81,30 @@ public class InGame implements Screen {
                 Vector2 touch = new Vector2(x, y);
                 viewport.unproject(touch);
                 currentTouch = touch;
-
                 Dot hitDot = getDot(x, y);
-                if (hitDot != null && selectedDots.size > 0) {
-                    if ((!selectedDots.contains(hitDot, true))
-                        && (hitDot.getColor().equals(selectedDots.get(0).getColor()))
-                        && (isNear(hitDot))) {
+
+                if (hitDot == null || selectedDots.size == 0) return true;
+
+                if (selectedDots.size > 1 && hitDot == selectedDots.get(selectedDots.size - 2)) {
+                    selectedDots.pop();
+                    isSquared = false;
+                    return true;
+                }
+
+                if (isSquared) return true;
+
+                if (hitDot.getColor().equals(selectedDots.get(0).getColor()) && isNear(hitDot)) {
+                    if (selectedDots.size >= 3 && isSquareDots(hitDot)) {
+                        selectedDots.add(hitDot);
+                        isSquared = true;
+                        return true;
+                    }
+
+                    if (!selectedDots.contains(hitDot, true)) {
                         selectedDots.add(hitDot);
                     }
                 }
+
                 return true;
             }
 
@@ -111,9 +129,36 @@ public class InGame implements Screen {
         return ((rowRange == 1 && colRange == 0) || (rowRange == 0 && colRange == 1));
     }
 
+    private boolean isSquareDots(Dot hitDot) {
+        if (hitDot != selectedDots.get(0)) return false;
+
+        int minR = hitDot.getTargetRow();
+        int maxR = hitDot.getTargetRow();
+        int minC = hitDot.getTargetCol();
+        int maxC = hitDot.getTargetCol();
+
+        for (Dot d : selectedDots) {
+            minR = Math.min(minR, d.getTargetRow());
+            maxR = Math.max(maxR, d.getTargetRow());
+            minC = Math.min(minC, d.getTargetCol());
+            maxC = Math.max(maxC, d.getTargetCol());
+        }
+
+        int sideR = maxR - minR;
+        int sideC = maxC - minC;
+
+        if (sideR == sideC && sideR > 0) {
+            return selectedDots.size == sideR * 4;
+        }
+        return false;
+    }
+
     @Override
     public void show() {
         Gdx.input.setInputProcessor(input);
+        goals = new LevelGoals(20); // 20 ходов на уровень
+        goals.addGoal(ColorType.RED, 15);
+        goals.addGoal(ColorType.BLUE, 15);
     }
 
     @Override
@@ -142,6 +187,15 @@ public class InGame implements Screen {
         float bottomY = 0.5f;
         drawBottomButtons(centerX, bottomY);
 
+        if (goals.isWin()) {
+            game.font.getData().setScale(0.045f);
+            game.font.setColor(Color.GREEN);
+            game.font.draw(game.batch, "VICTORY!", centerX - 1f, centerY);
+        } else if (goals.isLose()) {
+            game.font.getData().setScale(0.045f);
+            game.font.setColor(Color.RED);
+            game.font.draw(game.batch, "GAME OVER", centerX - 1.5f, centerY);
+        }
         game.batch.end();
 
         shapeRenderer.setProjectionMatrix(camera.combined);
@@ -177,10 +231,32 @@ public class InGame implements Screen {
     }
 
     private void processDots() {
-        if (selectedDots.size > 0) {
+        if (selectedDots.size >= 2) {
+            ColorType color = selectedDots.get(0).getColor();
+            int amount = 0;
+            if (isSquared) {
+                selectedDots.clear();
+                for (Dot d : gameBoard.getActiveDots()) {
+                    if (d.getColor().equals(color)) {
+                        selectedDots.add(d);
+                    }
+                }
+            }
+
+            amount = selectedDots.size;
+            goals.increment(color, amount);
+            goals.useMove();
+
             gameBoard.updateLogic(selectedDots);
-            selectedDots.clear();
+
+            if (goals.isWin()) {
+                // логика победы
+            } else if (goals.isLose()) {
+                // логика поражения
+            }
         }
+        selectedDots.clear();
+        isSquared = false;
     }
 
     private Dot getDot(int screenX, int screenY) {
@@ -222,7 +298,24 @@ public class InGame implements Screen {
     }
 
     private void drawTopUI(float centerX, float topY) {
+        // 1. Рисуем ходы слева
+        game.font.setColor(Color.BLACK);
+        game.font.draw(game.batch, "MOVES: " + goals.getMovesLeft(), centerX - 2.8f, topY);
 
+        float offset = 0;
+        for (ColorType color : goals.getGoalColors()) {
+            game.batch.setColor(convertColor(color));
+            float iconSize = 0.35f;
+
+            game.batch.draw(dotSprite, centerX + offset, topY - 0.45f, iconSize, iconSize);
+
+            game.batch.setColor(Color.WHITE);
+
+            String progress = goals.getCollected(color) + "/" + goals.getTarget(color);
+            game.font.draw(game.batch, progress, centerX + offset + 0.5f, topY - 0.15f);
+
+            offset += 1.8f;
+        }
     }
 
     private void drawBottomButtons(float centerX, float bottomY) {
@@ -268,7 +361,7 @@ public class InGame implements Screen {
 
     @Override
     public void dispose() {
-
+        shapeRenderer.dispose();
     }
 }
 
