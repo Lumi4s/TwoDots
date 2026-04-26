@@ -156,7 +156,7 @@ public class InGame implements Screen {
     @Override
     public void show() {
         Gdx.input.setInputProcessor(input);
-        goals = new LevelGoals(20); // 20 ходов на уровень
+        goals = new LevelGoals(20);
         goals.addGoal(ColorType.RED, 15);
         goals.addGoal(ColorType.BLUE, 15);
     }
@@ -210,14 +210,12 @@ public class InGame implements Screen {
                 Dot start = selectedDots.get(i);
                 Dot end = selectedDots.get(i + 1);
 
-                drawLine(start.getX() + gridX, start.getY() + gridY,
-                    end.getX() + gridX, end.getY() + gridY, lineWidth);
+                drawLine(start.getX() + gridX, start.getY() + gridY, end.getX() + gridX, end.getY() + gridY, lineWidth);
             }
 
             if (isDragging) {
                 Dot lastDot = selectedDots.peek();
-                drawLine(lastDot.getX() + gridX, lastDot.getY() + gridY,
-                    currentTouch.x, currentTouch.y, lineWidth);
+                drawLine(lastDot.getX() + gridX, lastDot.getY() + gridY, currentTouch.x, currentTouch.y, lineWidth);
 
             }
         }
@@ -289,16 +287,12 @@ public class InGame implements Screen {
             batch.setColor(convertColor(dot.getColor()));
 
             float dotSize = 0.5f;
-            batch.draw(dotSprite,
-                gridX + dot.getX() - dotSize / 2f,
-                gridY + dot.getY() - dotSize / 2f,
-                dotSize, dotSize);
+            batch.draw(dotSprite, gridX + dot.getX() - dotSize / 2f, gridY + dot.getY() - dotSize / 2f, dotSize, dotSize);
         }
         batch.setColor(Color.WHITE);
     }
 
     private void drawTopUI(float centerX, float topY) {
-        // 1. Рисуем ходы слева
         game.font.setColor(Color.BLACK);
         game.font.draw(game.batch, "MOVES: " + goals.getMovesLeft(), centerX - 2.8f, topY);
 

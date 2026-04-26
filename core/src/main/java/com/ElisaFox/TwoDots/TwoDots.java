@@ -1,6 +1,7 @@
 package com.ElisaFox.TwoDots;
 
 import com.ElisaFox.TwoDots.screen.InGame;
+import com.ElisaFox.TwoDots.screen.LVLEditor;
 import com.ElisaFox.TwoDots.screen.Menu;
 import com.badlogic.gdx.Game;
 import com.badlogic.gdx.Gdx;
@@ -14,10 +15,11 @@ public class TwoDots extends Game {
     public static int WORLD_HEIGHT = 10;
     public TextureAtlas atlas;
     public SpriteBatch batch;
-    public BitmapFont font;
+    public static BitmapFont font;
 
     public InGame inGame;
     public Menu menu;
+    public LVLEditor lvlEditor;
 
     @Override
     public void create() {
@@ -30,6 +32,8 @@ public class TwoDots extends Game {
 
         inGame = new InGame(this);
         menu = new Menu(this);
+        lvlEditor = new LVLEditor(this);
+
 
         this.setScreen(menu);
     }
