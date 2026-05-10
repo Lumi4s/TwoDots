@@ -61,7 +61,6 @@ public class Menu implements Screen {
 
         Table table = new Table();
         table.setFillParent(true);
-        table.debug();
 
         table.padLeft(40);
         table.padRight(40);
