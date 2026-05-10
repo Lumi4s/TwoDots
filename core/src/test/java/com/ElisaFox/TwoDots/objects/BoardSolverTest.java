@@ -17,10 +17,8 @@ public class BoardSolverTest {
     @BeforeEach
     void setUp() {
         solver = new BoardSolver();
-        // Create a 6x6 level
         levelData = new LevelData(10, 6, 6);
 
-        // Setup some goals: need 5 Red dots
         Map<ColorType, Integer> targetMap = new HashMap<>();
         targetMap.put(ColorType.RED, 5);
         goals = new LevelGoals(10, targetMap);
@@ -37,8 +35,7 @@ public class BoardSolverTest {
 
     @Test
     void testFindSimpleChain() {
-        // Manually place 3 Red dots in a row: (0,0), (0,1), (0,2)
-        board = new GameBoard(levelData); // Reset board
+        board = new GameBoard(levelData);
 
         Dot d1 = new Dot(ColorType.RED, 0, 0);
         Dot d2 = new Dot(ColorType.RED, 0, 1);
@@ -55,8 +52,7 @@ public class BoardSolverTest {
 
     @Test
     void testSquareDetection() {
-        // To test a square, we need 4 dots of same color in a 2x2.
-        board = new GameBoard(levelData); // Reset board
+        board = new GameBoard(levelData);
 
         board.setDotAt(0, 0, new Dot(ColorType.BLUE, 0, 0));
         board.setDotAt(0, 1, new Dot(ColorType.BLUE, 0, 1));
@@ -73,37 +69,23 @@ public class BoardSolverTest {
     void testWasLastMoveSquare() {
         board.fillBoard();
         solver.findBestMove(board, goals);
-        // This just checks if the boolean flag is accessible and behaves as expected
-        // (it's updated during findBestMove)
         boolean result = solver.wasLastMoveSquare();
-        // We don't assert true/false because it depends on the random board,
-        // but we check that it doesn't crash.
     }
 
     @Test
     void testNoPossibleMoves() {
-        board = new GameBoard(levelData); // Empty board (all null)
+        board = new GameBoard(levelData);
         Array<Dot> move = solver.findBestMove(board, goals);
-        assertTrue(move.size == 0, "Should return empty move when no dots exist");
+        assertEquals(0, move.size, "Should return empty move when no dots exist");
     }
 
     @Test
     void testScoringPrefersNeededColors() {
-        // Setup: Goal is 5 RED. We have already collected 5 RED (simulated).
-        // We need 5 BLUE.
         Map<ColorType, Integer> targetMap = new HashMap<>();
         targetMap.put(ColorType.RED, 5);
         targetMap.put(ColorType.BLUE, 5);
         goals = new LevelGoals(10, targetMap);
-
-        // Mocking "collected" is hard without changing LevelGoals,
-        // but we can simulate it by making the RED chain "useless"
-        // and the BLUE chain "useful".
-
         board = new GameBoard(levelData);
-        // Red chain (already satisfied - if we could set collected)
-        // Since we can't easily set 'collected', let's just test that it picks the longest path
-        // when colors are equal.
 
         board.setDotAt(0,0, new Dot(ColorType.RED, 0, 0));
         board.setDotAt(0,1, new Dot(ColorType.RED, 0, 1));
@@ -119,10 +101,8 @@ public class BoardSolverTest {
     @Test
     void testMaxDepthLimit() {
         board = new GameBoard(levelData);
-        // Create a snake of 15 dots
         for (int i = 0; i < 15; i++) {
-            board.setDotAt(0, i % 6, new Dot(ColorType.RED, 0, i % 6)); // This is simplified
-            // Note: In a real test, you'd make a proper winding snake path
+            board.setDotAt(0, i % 6, new Dot(ColorType.RED, 0, i % 6));
         }
 
         Array<Dot> move = solver.findBestMove(board, goals);
