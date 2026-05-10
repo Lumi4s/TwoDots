@@ -7,8 +7,6 @@ public class Dot {
     private float x, y;
     private int targetRow, targetCol;
 
-    public boolean isRemoving = false;
-
     public Dot(ColorType color, int row, int col) {
         this.color = color;
         this.targetRow = row;

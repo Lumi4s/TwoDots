@@ -1,5 +1,6 @@
 package com.ElisaFox.TwoDots.objects;
 
+import com.ElisaFox.TwoDots.TwoDots;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.utils.Array;
 
@@ -7,22 +8,27 @@ public class GameBoard {
     private Dot[][] grid;
     private int rows, cols;
     private Array<Dot> activeDots;
+    private LevelData levelData;
 
-    public GameBoard(int rows, int cols) {
-        this.rows = rows;
-        this.cols = cols;
+    public GameBoard(LevelData levelData) {
+        this.rows = TwoDots.ROWS;
+        this.cols = TwoDots.COLS;
         this.grid = new Dot[rows][cols];
         this.activeDots = new Array<>();
-        fillBoard();
+        this.levelData = levelData;
     }
 
-    private void fillBoard() {
+    public void fillBoard() {
         for (int r = 0; r < rows; r++) {
             for (int c = 0; c < cols; c++) {
-                ColorType randomColor = ColorType.values()[MathUtils.random(ColorType.values().length - 1)];
-                Dot dot = new Dot(randomColor, r, c);
-                grid[r][c] = dot;
-                activeDots.add(dot);
+                if (levelData.grid[r][c] == LevelData.CellType.NORMAL) {
+                    ColorType randomColor = ColorType.values()[MathUtils.random(ColorType.values().length - 1)];
+                    Dot dot = new Dot(randomColor, r, c);
+                    grid[r][c] = dot;
+                    activeDots.add(dot);
+                } else {
+                    grid[r][c] = null;
+                }
             }
         }
     }
@@ -47,27 +53,31 @@ public class GameBoard {
 
     private void handleFalling() {
         for (int c = 0; c < cols; c++) {
-            int emptySpaces = 0;
+            Array<Dot> survivors = new Array<>();
             for (int r = 0; r < rows; r++) {
-                if (grid[r][c] == null) {
-                    emptySpaces++;
-                } else if (emptySpaces > 0) {
-                    Dot dot = grid[r][c];
-                    grid[r - emptySpaces][c] = dot;
+                if (grid[r][c] != null) {
+                    survivors.add(grid[r][c]);
                     grid[r][c] = null;
-                    dot.setTargetRow(r - emptySpaces);
                 }
             }
 
-            for (int i = 0; i < emptySpaces; i++) {
-                int targetRow = rows - emptySpaces + i;
-                ColorType newColor = ColorType.values()[MathUtils.random(ColorType.values().length - 1)];
+            int survivorIndex = 0;
+            for (int r = 0; r < rows; r++) {
+                if (levelData.grid[r][c] == LevelData.CellType.NORMAL) {
+                    if (survivorIndex < survivors.size) {
+                        Dot dot = survivors.get(survivorIndex);
+                        grid[r][c] = dot;
+                        dot.setTargetRow(r);
+                        survivorIndex++;
+                    } else {
+                        ColorType newColor = ColorType.values()[MathUtils.random(ColorType.values().length - 1)];
+                        Dot newDot = new Dot(newColor, r, c);
+                        newDot.setY(rows + (r * 0.3f) + 1);
 
-                Dot newDot = new Dot(newColor, targetRow, c);
-                newDot.setY(rows + i + 0.5f);
-
-                grid[targetRow][c] = newDot;
-                activeDots.add(newDot);
+                        grid[r][c] = newDot;
+                        activeDots.add(newDot);
+                    }
+                }
             }
         }
     }

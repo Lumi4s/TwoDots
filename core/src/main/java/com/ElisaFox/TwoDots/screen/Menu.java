@@ -1,18 +1,14 @@
 package com.ElisaFox.TwoDots.screen;
 
 import com.ElisaFox.TwoDots.TwoDots;
+import com.ElisaFox.TwoDots.ui.ButtonStyleFactory;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.Color;
-import com.badlogic.gdx.graphics.Pixmap;
-import com.badlogic.gdx.graphics.Texture;
-import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.*;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
-import com.badlogic.gdx.scenes.scene2d.utils.Drawable;
-import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 import com.badlogic.gdx.utils.ScreenUtils;
 import com.badlogic.gdx.utils.viewport.ScreenViewport;
 
@@ -29,27 +25,7 @@ public class Menu implements Screen {
     private void init() {
         stage = new Stage(new ScreenViewport());
 
-        Skin skin = new Skin();
-
-        Pixmap pixmap = new Pixmap(1, 1, Pixmap.Format.RGBA8888);
-        pixmap.setColor(Color.WHITE);
-        pixmap.fill();
-
-        skin.add("white", new Texture(pixmap));
-        pixmap.dispose();
-
-        skin.add("default-font", TwoDots.font);
-
-        TextButton.TextButtonStyle style = new TextButton.TextButtonStyle();
-        style.font = TwoDots.font;
-
-        style.up = createRoundedButton(new Color(0.18f, 0.55f, 0.95f, 1f));
-        style.over = createRoundedButton(new Color(0.28f, 0.65f, 1f, 1f));
-        style.down = createRoundedButton(new Color(0.10f, 0.40f, 0.80f, 1f));
-
-        style.fontColor = Color.WHITE;
-
-        skin.add("default", style);
+        Skin skin = ButtonStyleFactory.createBaseSkin(TwoDots.font);
 
         Label.LabelStyle titleStyle = new Label.LabelStyle(TwoDots.font, Color.WHITE);
         skin.add("title", titleStyle);
@@ -58,11 +34,11 @@ public class Menu implements Screen {
         title.setFontScale(1.5f);
 
         TextButton play = new TextButton("PLAY", skin);
-        TextButton edit = new TextButton("LEVEL EDITOR", skin);
+        TextButton edit = new TextButton("EDITOR", skin);
         TextButton exit = new TextButton("EXIT", skin);
 
         play.getLabel().setFontScale(1.2f);
-        edit.getLabel().setFontScale(1.2f);
+        edit.getLabel().setFontScale(1f);
         exit.getLabel().setFontScale(1.2f);
 
         play.addListener(new ClickListener() {
@@ -106,35 +82,6 @@ public class Menu implements Screen {
         table.add(exit).row();
 
         stage.addActor(table);
-    }
-
-    private Drawable createRoundedButton(Color color) {
-
-        int width = 260;
-        int height = 180;
-        int radius = 35;
-
-        Pixmap pixmap = new Pixmap(width, height, Pixmap.Format.RGBA8888);
-        pixmap.setColor(0, 0, 0, 0);
-        pixmap.fill();
-
-        pixmap.setColor(color);
-
-        pixmap.fillRectangle(radius, 0, width - radius * 2, height);
-
-        pixmap.fillRectangle(0, radius, width, height - radius * 2);
-
-        pixmap.fillCircle(radius, radius, radius);
-        pixmap.fillCircle(width - radius, radius, radius);
-        pixmap.fillCircle(radius, height - radius, radius);
-        pixmap.fillCircle(width - radius, height - radius, radius);
-
-        Texture texture = new Texture(pixmap);
-        texture.setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear);
-
-        pixmap.dispose();
-
-        return new TextureRegionDrawable(new TextureRegion(texture));
     }
 
     @Override

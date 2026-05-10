@@ -4,18 +4,17 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class LevelData {
-    
+
     public enum CellType {
-        NORMAL,   // Обычная клетка (есть точка)
-        EMPTY,    // Пустое пространство (точка пролетает сквозь него)
-        BLOCK     // Препятствие (точка не может пройти)
+        NORMAL,
+        EMPTY
     }
 
     public int steps;
-    public Map<ColorType, Integer> goals = new HashMap<>();
+    public Map<ColorType, Integer> targetGoals = new HashMap<>();
     public CellType[][] grid;
 
-    public LevelData() {} 
+    public LevelData() {}
 
     public LevelData(int steps, int rows, int cols) {
         this.steps = steps;

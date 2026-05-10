@@ -1,20 +1,25 @@
 package com.ElisaFox.TwoDots.screen;
 
 import com.ElisaFox.TwoDots.TwoDots;
-import com.ElisaFox.TwoDots.objects.ColorType;
-import com.ElisaFox.TwoDots.objects.Dot;
-import com.ElisaFox.TwoDots.objects.GameBoard;
-import com.ElisaFox.TwoDots.objects.LevelGoals;
+import com.ElisaFox.TwoDots.objects.*;
+import com.ElisaFox.TwoDots.ui.ButtonStyleFactory;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.InputAdapter;
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.OrthographicCamera;
+import com.badlogic.gdx.graphics.Pixmap;
+import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.graphics.g2d.Sprite;
+import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.Vector2;
+import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.Stage;
+import com.badlogic.gdx.scenes.scene2d.ui.*;
+import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
+import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.ScreenUtils;
 import com.badlogic.gdx.utils.viewport.ExtendViewport;
@@ -25,12 +30,20 @@ public class InGame implements Screen {
     private OrthographicCamera camera;
     private final InputAdapter input;
 
-    private Stage GameStage;
     private Stage uiStage;
+    private TextButton closeBtn;
+    private TextButton rerollBtn;
+
+    private Array<Dot> botMove;
+    private int botMoveIndex = 0;
+
+    private boolean botAnimating = false;
+    private float botDrawTimer = 0f;
+
+    private Table root;
+    private Table goalsTable;
 
     private GameBoard gameBoard;
-    private final int rows = 6;
-    private final int cols = 6;
     private Sprite backgroundSprite;
     private Sprite dotSprite;
     private Array<Dot> selectedDots;
@@ -40,7 +53,17 @@ public class InGame implements Screen {
     private ShapeRenderer shapeRenderer;
     private boolean isDragging;
     private boolean isSquared;
+    private LevelData currentLevelData;
     private LevelGoals goals;
+    private Skin skin;
+    private Texture bgTexture;
+
+    private TextButton autoBtn;
+
+    private boolean autoPlay = false;
+    private float autoTimer = 0f;
+
+    private BoardSolver solver;
 
     private static final Color DOT_BLUE = new Color(0.337f, 0.706f, 0.914f, 1f);
     private static final Color DOT_RED = new Color(0.902f, 0.298f, 0.235f, 1f);
@@ -48,16 +71,97 @@ public class InGame implements Screen {
     private static final Color DOT_GREEN = new Color(0.18f, 0.8f, 0.443f, 1f);
     private static final Color DOT_PURPLE = new Color(0.608f, 0.349f, 0.714f, 1f);
     private static final Color DOT_DARK = new Color(0.173f, 0.243f, 0.314f, 1f);
-
+    private static final Color CELL_EMPTY_COLOR = new Color(0.2f, 0.2f, 0.2f, 0.5f);
+    private static final Color CELL_NORMAL_COLOR = new Color(0.9f, 0.9f, 0.9f, 0.1f);
 
     public InGame(TwoDots game) {
         this.game = game;
+
+        solver = new BoardSolver();
+
+        uiStage = new Stage(new com.badlogic.gdx.utils.viewport.ScreenViewport());
+        bgTexture = createRectTexture(new Color(0.1f, 0.1f, 0.15f, 1f));
+
         camera = new OrthographicCamera();
         viewport = new ExtendViewport(TwoDots.WORLD_WIDTH, TwoDots.WORLD_HEIGHT, camera);
-        gameBoard = new GameBoard(rows, cols);
         shapeRenderer = new ShapeRenderer();
-
         backgroundSprite = game.atlas.createSprite("square");
+
+        root = new Table();
+        root.setFillParent(true);
+        uiStage.addActor(root);
+
+        this.skin = ButtonStyleFactory.createBaseSkin(TwoDots.font);
+
+        if (!skin.has("default", Window.WindowStyle.class)) {
+            Window.WindowStyle windowStyle = new Window.WindowStyle();
+            windowStyle.background = new TextureRegionDrawable(new TextureRegion(bgTexture));
+            windowStyle.titleFont = TwoDots.font;
+            windowStyle.titleFontColor = Color.WHITE;
+
+            skin.add("default", windowStyle);
+        }
+
+        if (!skin.has("default", Label.LabelStyle.class)) {
+            Label.LabelStyle labelStyle = new Label.LabelStyle(TwoDots.font, Color.WHITE);
+            skin.add("default", labelStyle);
+        }
+
+        closeBtn = new TextButton("X", skin);
+        closeBtn.getLabel().setFontScale(0.7f);
+        closeBtn.addListener(new ClickListener() {
+            @Override
+            public void clicked(InputEvent event, float x, float y) {
+                game.setScreen(game.menu);
+            }
+        });
+
+        goalsTable = new Table();
+        goalsTable.pad(8f);
+
+        root.top().left();
+        root.add(closeBtn).size(60, 60).pad(20);
+        root.add().expandX();
+        root.add(goalsTable).top().padTop(18f);
+        root.add().expandX();
+
+        root.row();
+        root.add().expandY();
+        root.row();
+
+        Table bottomPanel = new Table();
+        rerollBtn = new TextButton("REROLL (-2)", skin);
+        rerollBtn.getLabel().setFontScale(0.65f);
+        rerollBtn.addListener(new ClickListener() {
+            @Override
+            public void clicked(InputEvent event, float x, float y) {
+                rerollField();
+            }
+        });
+        autoBtn = new TextButton("AUTO: OFF", skin);
+        autoBtn.getLabel().setFontScale(0.65f);
+
+        autoBtn.addListener(new ClickListener() {
+            @Override
+            public void clicked(InputEvent event, float x, float y) {
+                autoPlay = !autoPlay;
+                autoBtn.setText(autoPlay
+                    ? "AUTO: ON"
+                    : "AUTO: OFF");
+            }
+        });
+
+        bottomPanel.add(rerollBtn)
+            .size(270, 64)
+            .padRight(15f)
+            .padBottom(20f);
+
+        bottomPanel.add(autoBtn)
+            .size(270, 64)
+            .padLeft(15f)
+            .padBottom(20f);
+        root.add(bottomPanel).colspan(4).bottom();
+
         dotSprite = game.atlas.createSprite("dot");
         selectedDots = new Array<>();
         currentTouch = new Vector2();
@@ -155,11 +259,75 @@ public class InGame implements Screen {
 
     @Override
     public void show() {
-        Gdx.input.setInputProcessor(input);
-        goals = new LevelGoals(20);
-        goals.addGoal(ColorType.RED, 15);
-        goals.addGoal(ColorType.BLUE, 15);
+        com.badlogic.gdx.InputMultiplexer multiplexer = new com.badlogic.gdx.InputMultiplexer();
+        multiplexer.addProcessor(uiStage);
+        multiplexer.addProcessor(input);
+        Gdx.input.setInputProcessor(multiplexer);
+
+        LevelSerializer serializer = new LevelSerializer();
+        LevelData loadedData = serializer.loadLevel("my_level.json");
+
+        if (loadedData != null) {
+            startLevel(loadedData);
+        } else {
+            LevelData defaultData = new LevelData(20, TwoDots.ROWS, TwoDots.COLS);
+            defaultData.targetGoals.put(ColorType.RED, 5);
+            defaultData.targetGoals.put(ColorType.BLUE, 5);
+            startLevel(defaultData);
+        }
     }
+
+    private void startLevel(LevelData data) {
+        this.currentLevelData = data;
+
+        this.goals = new LevelGoals(data.steps, data.targetGoals);
+
+        this.gameBoard = new GameBoard(data);
+        this.gameBoard.fillBoard();
+
+        rebuildGoalsHud();
+    }
+
+    private void rebuildGoalsHud() {
+        if (goalsTable == null || goals == null) return;
+
+        goalsTable.clear();
+
+        Table hud = new Table();
+
+        Label movesLabel = new Label("MOVES: " + goals.getMovesLeft(), skin);
+        movesLabel.setColor(Color.BLACK);
+        movesLabel.setFontScale(0.5f);
+        hud.add(movesLabel).padRight(24f);
+
+        int counter = 0;
+
+        for (ColorType color : goals.getGoalColors()) {
+            counter++;
+            Table goalCell = new Table();
+            Image icon = new Image(new TextureRegionDrawable(new TextureRegion(dotSprite)));
+            icon.setColor(convertColor(color));
+
+            Label progress = new Label(
+                goals.getCollected(color) + "/" + goals.getTarget(color),
+                skin
+            );
+            progress.setColor(Color.BLACK);
+            progress.setFontScale(0.5f);
+
+            goalCell.add(icon).size(20, 20).padRight(6f);
+            goalCell.add(progress);
+
+            hud.add(goalCell).padRight(18f);
+
+            if (counter % 2 == 0) {
+                hud.row();
+                hud.add().width(0);
+            }
+        }
+        goalsTable.add(hud);
+    }
+
 
     @Override
     public void render(float delta) {
@@ -167,59 +335,80 @@ public class InGame implements Screen {
 
         viewport.apply();
         game.batch.setProjectionMatrix(camera.combined);
-
-        float worldWidth = viewport.getWorldWidth();
-        float worldHeight = viewport.getWorldHeight();
-        float centerX = worldWidth / 2f;
-        float centerY = worldHeight / 2f;
-
         game.batch.begin();
+        game.batch.draw(backgroundSprite, 0, 0, viewport.getWorldWidth(), viewport.getWorldHeight());
 
-        game.batch.draw(backgroundSprite, 0, 0, worldWidth, worldHeight);
-
-        float topY = worldHeight - 0.5f;
-        drawTopUI(centerX, topY);
+        float centerX = viewport.getWorldWidth() / 2f;
+        float worldHeight = viewport.getWorldHeight();
 
         gridX = centerX - 3f;
-        gridY = centerY - 3f;
+        gridY = (worldHeight / 2f) - 3f;
         drawGrid(game.batch, gridX, gridY);
-
-        float bottomY = 0.5f;
-        drawBottomButtons(centerX, bottomY);
-
-        if (goals.isWin()) {
-            game.font.getData().setScale(0.045f);
-            game.font.setColor(Color.GREEN);
-            game.font.draw(game.batch, "VICTORY!", centerX - 1f, centerY);
-        } else if (goals.isLose()) {
-            game.font.getData().setScale(0.045f);
-            game.font.setColor(Color.RED);
-            game.font.draw(game.batch, "GAME OVER", centerX - 1.5f, centerY);
-        }
         game.batch.end();
 
         shapeRenderer.setProjectionMatrix(camera.combined);
         shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
-
         if (selectedDots.size > 0) {
             shapeRenderer.setColor(convertColor(selectedDots.first().getColor()));
-
             float lineWidth = 0.12f;
-
             for (int i = 0; i < selectedDots.size - 1; i++) {
                 Dot start = selectedDots.get(i);
                 Dot end = selectedDots.get(i + 1);
-
                 drawLine(start.getX() + gridX, start.getY() + gridY, end.getX() + gridX, end.getY() + gridY, lineWidth);
             }
-
             if (isDragging) {
                 Dot lastDot = selectedDots.peek();
                 drawLine(lastDot.getX() + gridX, lastDot.getY() + gridY, currentTouch.x, currentTouch.y, lineWidth);
-
             }
         }
         shapeRenderer.end();
+
+        uiStage.act(delta);
+        uiStage.draw();
+        if (autoPlay && goals != null) {
+            autoTimer += delta;
+
+            if (botAnimating) {
+                botDrawTimer += delta;
+
+                if (botDrawTimer >= 0.5f) {
+                    botDrawTimer = 0f;
+
+                    if (botMoveIndex < botMove.size) {
+                        selectedDots.add(botMove.get(botMoveIndex));
+                        botMoveIndex++;
+                    } else {
+                        botAnimating = false;
+                        if (solver.wasLastMoveSquare()) {
+                            isSquared = true;
+                        }
+
+                        processDots();
+                    }
+                }
+            } else {
+                if (autoTimer >= 1f) {
+                    autoTimer = 0f;
+
+                    if (!goals.isWin() && !goals.isLose()) {
+                        Array<Dot> move = solver.findBestMove(gameBoard, goals);
+
+                        if (move != null && move.size >= 2) {
+                            selectedDots.clear();
+                            isSquared = false;
+
+                            botMove = new Array<>();
+                            botMove.addAll(move);
+                            botMoveIndex = 0;
+                            botAnimating = true;
+
+                        } else {
+                            rerollField();
+                        }
+                    }
+                }
+            }
+        }
     }
 
     private void drawLine(float x1, float y1, float x2, float y2, float width) {
@@ -244,13 +433,14 @@ public class InGame implements Screen {
             amount = selectedDots.size;
             goals.increment(color, amount);
             goals.useMove();
+            rebuildGoalsHud();
 
             gameBoard.updateLogic(selectedDots);
 
             if (goals.isWin()) {
-                // логика победы
+                showEndDialog(true);
             } else if (goals.isLose()) {
-                // логика поражения
+                showEndDialog(false);
             }
         }
         selectedDots.clear();
@@ -266,7 +456,7 @@ public class InGame implements Screen {
         int row = (int) Math.floor(y);
         int col = (int) Math.floor(x);
 
-        if (col >= 0 && col < 6 && row >= 0 && row < 6) {
+        if (col >= 0 && col < TwoDots.COLS && row >= 0 && row < TwoDots.ROWS) {
             Dot dot = gameBoard.getDotAt(row, col);
             if (dot == null) return null;
             float centerX = col + 0.5f;
@@ -280,7 +470,24 @@ public class InGame implements Screen {
         return null;
     }
 
+
     private void drawGrid(Batch batch, float gridX, float gridY) {
+        for (int r = 0; r < currentLevelData.grid.length; r++) {
+        for (int c = 0; c < currentLevelData.grid[0].length; c++) {
+            float cellX = gridX + c;
+            float cellY = gridY + r;
+            float cellSize = 1.0f;
+
+            if (currentLevelData.grid[r][c] == LevelData.CellType.EMPTY) {
+                batch.setColor(CELL_EMPTY_COLOR);
+                batch.draw(backgroundSprite, cellX, cellY, cellSize, cellSize);
+            } else {
+                batch.setColor(CELL_NORMAL_COLOR);
+                batch.draw(backgroundSprite, cellX, cellY, cellSize, cellSize);
+            }
+        }
+    }
+
         for (Dot dot : gameBoard.getActiveDots()) {
             dot.update(Gdx.graphics.getDeltaTime());
 
@@ -290,30 +497,6 @@ public class InGame implements Screen {
             batch.draw(dotSprite, gridX + dot.getX() - dotSize / 2f, gridY + dot.getY() - dotSize / 2f, dotSize, dotSize);
         }
         batch.setColor(Color.WHITE);
-    }
-
-    private void drawTopUI(float centerX, float topY) {
-        game.font.setColor(Color.BLACK);
-        game.font.draw(game.batch, "MOVES: " + goals.getMovesLeft(), centerX - 2.8f, topY);
-
-        float offset = 0;
-        for (ColorType color : goals.getGoalColors()) {
-            game.batch.setColor(convertColor(color));
-            float iconSize = 0.35f;
-
-            game.batch.draw(dotSprite, centerX + offset, topY - 0.45f, iconSize, iconSize);
-
-            game.batch.setColor(Color.WHITE);
-
-            String progress = goals.getCollected(color) + "/" + goals.getTarget(color);
-            game.font.draw(game.batch, progress, centerX + offset + 0.5f, topY - 0.15f);
-
-            offset += 1.8f;
-        }
-    }
-
-    private void drawBottomButtons(float centerX, float bottomY) {
-
     }
 
     private Color convertColor(ColorType color) {
@@ -333,9 +516,83 @@ public class InGame implements Screen {
         }
     }
 
+    private Texture createRectTexture(Color color) {
+        Pixmap pixmap = new Pixmap(64, 64, Pixmap.Format.RGBA8888);
+        pixmap.setColor(color);
+        pixmap.fill();
+        Texture texture = new Texture(pixmap);
+        pixmap.dispose();
+        return texture;
+    }
+
+    private void rerollField() {
+        if (currentLevelData == null || goals == null) return;
+        if (goals.getMovesLeft() <= 2) return;
+
+        selectedDots.clear();
+        isDragging = false;
+        isSquared = false;
+
+        goals.useMove();
+        goals.useMove();
+
+        gameBoard = new GameBoard(currentLevelData);
+        gameBoard.fillBoard();
+
+        rebuildGoalsHud();
+    }
+
+    private void showEndDialog(boolean win) {
+        Dialog dialog = new Dialog("", skin);
+        dialog.getContentTable().clear();
+        dialog.getContentTable().pad(25);
+
+        Label title = new Label(win ? "WIN" : "LOSE", skin);
+        title.setFontScale(1.2f);
+        title.setColor(win ? Color.GREEN : Color.RED);
+
+        dialog.getContentTable().add(title).padBottom(30).center();
+        dialog.getContentTable().row();
+
+        TextButton retryBtn = new TextButton("RETRY", skin);
+        retryBtn.getLabel().setFontScale(0.7f);
+
+        TextButton exitBtn = new TextButton("EXIT", skin);
+        exitBtn.getLabel().setFontScale(0.7f);
+
+        retryBtn.addListener(new ClickListener() {
+            @Override
+            public void clicked(InputEvent event, float x, float y) {
+                dialog.hide();
+
+                if (currentLevelData != null) {
+                    startLevel(currentLevelData);
+                }
+            }
+        });
+
+        exitBtn.addListener(new ClickListener() {
+            @Override
+            public void clicked(InputEvent event, float x, float y) {
+                dialog.remove();
+                game.setScreen(game.menu);
+            }
+        });
+
+        Table buttons = new Table();
+        buttons.add(retryBtn).size(220, 60).padBottom(15);
+        buttons.row();
+        buttons.add(exitBtn).size(220, 60);
+
+        dialog.getContentTable().add(buttons);
+
+        dialog.show(uiStage);
+    }
+
     @Override
     public void resize(int width, int height) {
         viewport.update(width, height, true);
+        uiStage.getViewport().update(width, height, true);
     }
 
     @Override
