@@ -331,7 +331,7 @@ public class InGame implements Screen {
 
     @Override
     public void render(float delta) {
-        ScreenUtils.clear(1, 1, 1, 1);
+        ScreenUtils.clear(0.07f, 0.09f, 0.13f, 1f);
 
         viewport.apply();
         game.batch.setProjectionMatrix(camera.combined);

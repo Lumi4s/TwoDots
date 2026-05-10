@@ -123,7 +123,6 @@ public class LVLEditor implements Screen {
         save.addListener(new ClickListener() {
             public void clicked(InputEvent event, float x, float y) {
                 saveCurrentLevel();
-                System.out.println("Level saved!");
             }
 
         });
@@ -302,6 +301,5 @@ public class LVLEditor implements Screen {
         }
 
         levelSerializer.saveLevel(data, "my_level.json");
-        System.out.println("Saved! Steps: " + data.steps + ", Goals: " + data.targetGoals);
     }
 }

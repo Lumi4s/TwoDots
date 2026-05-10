@@ -14,9 +14,8 @@ public class LevelSerializer {
             .create();
     }
 
-    public void saveLevel(LevelData data, String fileName) {
-        FileHandle file = Gdx.files.local("levels/" + fileName);
-
+    // We add a version that takes a FileHandle directly to make it testable
+    public void saveLevel(FileHandle file, LevelData data) {
         if (!file.parent().exists()) {
             file.parent().mkdirs();
         }
@@ -24,13 +23,22 @@ public class LevelSerializer {
         file.writeString(jsonString, false);
     }
 
-    public LevelData loadLevel(String fileName) {
-        FileHandle file = Gdx.files.local("levels/" + fileName);
+    // This is the version your game uses
+    public void saveLevel(LevelData data, String fileName) {
+        saveLevel(Gdx.files.local("levels/" + fileName), data);
+    }
+
+    public LevelData loadLevel(FileHandle file) {
         if (!file.exists()) {
             return null;
         }
 
         String jsonString = file.readString();
         return gson.fromJson(jsonString, LevelData.class);
+    }
+
+    // This is the version your game uses
+    public LevelData loadLevel(String fileName) {
+        return loadLevel(Gdx.files.local("levels/" + fileName));
     }
 }

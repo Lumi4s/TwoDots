@@ -68,11 +68,13 @@ public class BoardSolver {
             Dot next = neighbors.get(i);
             if (next == null || next.getColor() != color) continue;
 
+            // Prevent immediate backtracking to the previous dot in the path
             Dot previous = path.size >= 2 ? path.get(path.size - 2) : null;
             if (next == previous) continue;
 
-            if (visited.contains(next)) {
+            if (path.contains(next, true)) { // Check if 'next' is in our current path
                 int loopStartIndex = path.indexOf(next, true);
+                // A loop must have at least 4 dots (e.g., a 2x2 square)
                 if (loopStartIndex != -1 && path.size - loopStartIndex >= 3) {
                     Array<Dot> loopPath = new Array<>();
                     for (int j = loopStartIndex; j < path.size; j++) {
@@ -88,11 +90,11 @@ public class BoardSolver {
                     }
                 }
             } else {
-                visited.add(next);
                 path.add(next);
+                // We don't need a separate 'visited' set if we use 'path.contains()'
+                // for cycle detection in this specific DFS implementation
                 bestLoopScore = dfsLoop(board, next, color, path, visited, goals, bestLoop, bestLoopScore);
                 path.pop();
-                visited.remove(next);
             }
         }
         return bestLoopScore;

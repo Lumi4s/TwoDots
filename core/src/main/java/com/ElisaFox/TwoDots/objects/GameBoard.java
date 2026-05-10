@@ -88,4 +88,9 @@ public class GameBoard {
         }
         return null;
     }
+
+    void setDotAt(int row, int col, Dot dot) {
+        this.grid[row][col] = dot;
+        this.activeDots.add(dot);
+    }
 }
