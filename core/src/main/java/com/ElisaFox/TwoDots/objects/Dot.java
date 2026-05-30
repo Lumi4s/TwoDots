@@ -3,7 +3,7 @@ package com.ElisaFox.TwoDots.objects;
 import com.badlogic.gdx.math.MathUtils;
 
 public class Dot {
-    private ColorType color;
+    private final ColorType color;
     private float x, y;
     private int targetRow, targetCol;
 
@@ -43,24 +43,32 @@ public class Dot {
         return targetRow;
     }
 
-    public int getTargetCol() {
-        return targetCol;
-    }
-
-    public float getX(){return x;}
-
-    public float getY(){return y;}
-
     public void setTargetRow(int targetRow) {
         this.targetRow = targetRow;
+    }
+
+    public int getTargetCol() {
+        return targetCol;
     }
 
     public void setTargetCol(int targetCol) {
         this.targetCol = targetCol;
     }
 
-    public void setX(float x){this.x = x;}
+    public float getX() {
+        return x;
+    }
 
-    public void setY(float y){this.y = y;}
+    public void setX(float x) {
+        this.x = x;
+    }
+
+    public float getY() {
+        return y;
+    }
+
+    public void setY(float y) {
+        this.y = y;
+    }
 
 }

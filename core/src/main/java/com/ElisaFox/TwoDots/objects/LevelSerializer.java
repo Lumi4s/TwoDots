@@ -1,9 +1,9 @@
 package com.ElisaFox.TwoDots.objects;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.files.FileHandle;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 
 public class LevelSerializer {
     private final Gson gson;

@@ -1,6 +1,7 @@
 package com.ElisaFox.TwoDots.objects;
 
 import com.badlogic.gdx.utils.ObjectMap;
+
 import java.util.Map;
 
 public class LevelGoals {
@@ -60,9 +61,23 @@ public class LevelGoals {
         return movesLeft <= 0 && !isWin();
     }
 
-    public int getMovesLeft() { return movesLeft; }
-    public void setMovesLeft(int moves) { this.movesLeft = moves; }
-    public int getCollected(ColorType color) { return collected.get(color, 0); }
-    public int getTarget(ColorType color) { return targets.get(color, 0); }
-    public ObjectMap.Keys<ColorType> getGoalColors() { return targets.keys(); }
+    public int getMovesLeft() {
+        return movesLeft;
+    }
+
+    public void setMovesLeft(int moves) {
+        this.movesLeft = moves;
+    }
+
+    public int getCollected(ColorType color) {
+        return collected.get(color, 0);
+    }
+
+    public int getTarget(ColorType color) {
+        return targets.get(color, 0);
+    }
+
+    public ObjectMap.Keys<ColorType> getGoalColors() {
+        return targets.keys();
+    }
 }

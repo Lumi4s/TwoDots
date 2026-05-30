@@ -5,10 +5,11 @@ import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.utils.Array;
 
 public class GameBoard {
-    private Dot[][] grid;
-    private int rows, cols;
-    private Array<Dot> activeDots;
-    private LevelData levelData;
+    private final Dot[][] grid;
+    private final int rows;
+    private final int cols;
+    private final Array<Dot> activeDots;
+    private final LevelData levelData;
 
     public GameBoard(LevelData levelData) {
         this.rows = TwoDots.ROWS;
@@ -89,7 +90,7 @@ public class GameBoard {
         return null;
     }
 
-    void setDotAt(int row, int col, Dot dot) {
+    public void setDotAt(int row, int col, Dot dot) {
         this.grid[row][col] = dot;
         this.activeDots.add(dot);
     }

@@ -2,9 +2,6 @@ package com.ElisaFox.TwoDots.screen;
 
 import com.ElisaFox.TwoDots.TwoDots;
 import com.ElisaFox.TwoDots.objects.ColorType;
-import com.ElisaFox.TwoDots.objects.LevelData;
-import com.ElisaFox.TwoDots.objects.LevelGoals;
-import com.ElisaFox.TwoDots.objects.LevelSerializer;
 import com.ElisaFox.TwoDots.ui.ButtonStyleFactory;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Screen;
@@ -23,28 +20,19 @@ import com.badlogic.gdx.utils.viewport.ScreenViewport;
 
 public class LVLEditor implements Screen {
 
-    private final TwoDots game;
-    private Stage stage;
-
     private static final int GRID_SIZE = 6;
-    private boolean[][] grid = new boolean[GRID_SIZE][GRID_SIZE];
-    private Image[][] cellImages = new Image[GRID_SIZE][GRID_SIZE];
-    private Skin skin;
-    private LevelGoals goals = new LevelGoals();
+    private final TwoDots game;
     private final ObjectMap<ColorType, TextureRegionDrawable> colorIcons = new com.badlogic.gdx.utils.ObjectMap<>();
-
-    private Texture passableView;
-    private Texture blockView;
-    private Texture bgTexture;
-    private final LevelSerializer levelSerializer = new LevelSerializer();
+    private Stage stage;
+    private final Image[][] cellImages = new Image[GRID_SIZE][GRID_SIZE];
+    private Skin skin;
+    private final Texture passableView;
+    private final Texture blockView;
+    private final Texture bgTexture;
+    final LVLEditorController controller = new LVLEditorController(GRID_SIZE);
 
     public LVLEditor(TwoDots game) {
         this.game = game;
-        for (int i = 0; i < GRID_SIZE; i++) {
-            for (int j = 0; j < GRID_SIZE; j++) {
-                grid[i][j] = true;
-            }
-        }
 
         passableView = createRectTexture(new Color(0.2f, 0.5f, 0.2f, 1f));
         blockView = createRectTexture(new Color(0.4f, 0.2f, 0.2f, 1f));
@@ -52,6 +40,15 @@ public class LVLEditor implements Screen {
         for (ColorType ct : ColorType.values()) {
             colorIcons.put(ct, new TextureRegionDrawable(new TextureRegion(createRectTexture(getColor(ct)))));
         }
+        controller.setListener(new LVLEditorController.Listener() {
+            @Override public void onCellChanged(int row, int col, boolean passable) {
+                Texture t = passable ? passableView : blockView;
+                cellImages[row][col].setDrawable(new TextureRegionDrawable(new TextureRegion(t)));
+            }
+            @Override public void onMovesChanged(int newMoves) {}
+            @Override public void onGoalChanged(ColorType color, int newValue) {}
+            @Override public void onSaved() {}
+        });
         init();
     }
 
@@ -81,7 +78,9 @@ public class LVLEditor implements Screen {
         closeBtn.getLabel().setFontScale(0.7f);
         closeBtn.addListener(new ClickListener() {
             @Override
-            public void clicked(InputEvent event, float x, float y) { game.setScreen(game.menu); }
+            public void clicked(InputEvent event, float x, float y) {
+                game.setScreen(game.menu);
+            }
         });
 
         Table topBar = new Table();
@@ -142,9 +141,7 @@ public class LVLEditor implements Screen {
     }
 
     private void toggleCell(int r, int c) {
-        grid[r][c] = !grid[r][c];
-        Texture targetTexture = grid[r][c] ? passableView : blockView;
-        cellImages[r][c].setDrawable(new TextureRegionDrawable(new TextureRegion(targetTexture)));
+        controller.toggleCell(r, c);
     }
 
     private Texture createRectTexture(Color color) {
@@ -156,16 +153,35 @@ public class LVLEditor implements Screen {
         return texture;
     }
 
-    @Override public void show() { Gdx.input.setInputProcessor(stage); }
-    @Override public void render(float delta) {
+    @Override
+    public void show() {
+        Gdx.input.setInputProcessor(stage);
+    }
+
+    @Override
+    public void render(float delta) {
         ScreenUtils.clear(0.07f, 0.09f, 0.13f, 1f);
         stage.act(delta);
         stage.draw();
     }
-    @Override public void resize(int width, int height) { stage.getViewport().update(width, height, true); }
-    @Override public void hide() { Gdx.input.setInputProcessor(null); }
-    @Override public void pause() {}
-    @Override public void resume() {}
+
+    @Override
+    public void resize(int width, int height) {
+        stage.getViewport().update(width, height, true);
+    }
+
+    @Override
+    public void hide() {
+        Gdx.input.setInputProcessor(null);
+    }
+
+    @Override
+    public void pause() {
+    }
+
+    @Override
+    public void resume() {
+    }
 
     @Override
     public void dispose() {
@@ -196,7 +212,7 @@ public class LVLEditor implements Screen {
 
         TextButton movesMinus = new TextButton("-", skin);
         TextButton movesPlus = new TextButton("+", skin);
-        Label movesCount = new Label(String.valueOf(goals.getMovesLeft()), skin);
+        Label movesCount = new Label(String.valueOf(controller.getMoves()), skin);
         movesCount.setFontScale(0.8f);
         movesMinus.getLabel().setFontScale(0.7f);
         movesMinus.getLabelCell().padBottom(6f);
@@ -204,13 +220,15 @@ public class LVLEditor implements Screen {
 
 
         movesMinus.addListener(new ClickListener() {
-            @Override public void clicked(InputEvent e, float x, float y) {
-                if (goals.getMovesLeft() > 1) updateMoves(movesCount, goals.getMovesLeft() - 1);
+            @Override
+            public void clicked(InputEvent e, float x, float y) {
+                if (controller.getMoves() > 1) updateMoves(movesCount, controller.getMoves() - 1);
             }
         });
         movesPlus.addListener(new ClickListener() {
-            @Override public void clicked(InputEvent e, float x, float y) {
-                updateMoves(movesCount, goals.getMovesLeft() + 1);
+            @Override
+            public void clicked(InputEvent e, float x, float y) {
+                updateMoves(movesCount, controller.getMoves() + 1);
             }
         });
 
@@ -229,7 +247,7 @@ public class LVLEditor implements Screen {
             Image icon = new Image(new TextureRegionDrawable(new TextureRegion(createRectTexture(getColor(color)))));
             TextButton btnM = new TextButton("-", skin);
             TextButton btnP = new TextButton("+", skin);
-            final Label valLabel = new Label(String.valueOf(goals.getTarget(color)), skin);
+            final Label valLabel = new Label(String.valueOf(controller.getGoal(color)), skin);
 
             valLabel.setFontScale(0.5f);
             btnM.getLabel().setFontScale(0.7f);
@@ -237,16 +255,18 @@ public class LVLEditor implements Screen {
             btnP.getLabel().setFontScale(0.7f);
 
             btnM.addListener(new ClickListener() {
-                @Override public void clicked(InputEvent e, float x, float y) {
-                    int val = Math.max(0, goals.getTarget(color) - 1);
-                    goals.setTarget(color, val);
+                @Override
+                public void clicked(InputEvent e, float x, float y) {
+                    int val = Math.max(0, controller.getGoal(color) - 1);
+                    controller.setGoal(color, val);
                     valLabel.setText(String.valueOf(val));
                 }
             });
             btnP.addListener(new ClickListener() {
-                @Override public void clicked(InputEvent e, float x, float y) {
-                    int val = goals.getTarget(color) + 1;
-                    goals.setTarget(color, val);
+                @Override
+                public void clicked(InputEvent e, float x, float y) {
+                    int val = controller.getGoal(color) + 1;
+                    controller.setGoal(color, val);
                     valLabel.setText(String.valueOf(val));
                 }
             });
@@ -271,35 +291,28 @@ public class LVLEditor implements Screen {
     }
 
     private void updateMoves(Label label, int newVal) {
-        goals.setMovesLeft(newVal);
+        controller.setMoves(newVal);
         label.setText(String.valueOf(newVal));
     }
 
     private Color getColor(ColorType type) {
         switch (type) {
-            case BLUE: return Color.BLUE;
-            case RED: return Color.RED;
-            case YELLOW: return Color.YELLOW;
-            case GREEN: return Color.GREEN;
-            case PURPLE: return Color.PURPLE;
-            default: return Color.WHITE;
+            case BLUE:
+                return Color.BLUE;
+            case RED:
+                return Color.RED;
+            case YELLOW:
+                return Color.YELLOW;
+            case GREEN:
+                return Color.GREEN;
+            case PURPLE:
+                return Color.PURPLE;
+            default:
+                return Color.WHITE;
         }
     }
 
     private void saveCurrentLevel() {
-        LevelData data = new LevelData(goals.getMovesLeft(), GRID_SIZE, GRID_SIZE);
-
-        for (int r = 0; r < GRID_SIZE; r++) {
-            for (int c = 0; c < GRID_SIZE; c++) {
-                data.grid[r][c] = grid[r][c] ? LevelData.CellType.NORMAL : LevelData.CellType.EMPTY;
-            }
-        }
-
-        for (ColorType ct : ColorType.values()) {
-            int targetValue = goals.getTarget(ct);
-            data.targetGoals.put(ct, targetValue);
-        }
-
-        levelSerializer.saveLevel(data, "my_level.json");
+        controller.save("my_level.json");
     }
 }

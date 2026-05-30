@@ -11,14 +11,13 @@ import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureAtlas;
 
 public class TwoDots extends Game {
-    public static int WORLD_WIDTH = 6;
-    public static int WORLD_HEIGHT = 10;
     public final static int ROWS = 6;
     public final static int COLS = 6;
+    public static int WORLD_WIDTH = 6;
+    public static int WORLD_HEIGHT = 10;
+    public static BitmapFont font;
     public TextureAtlas atlas;
     public SpriteBatch batch;
-    public static BitmapFont font;
-
     public InGame inGame;
     public Menu menu;
     public LVLEditor lvlEditor;

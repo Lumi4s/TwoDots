@@ -5,16 +5,11 @@ import java.util.Map;
 
 public class LevelData {
 
-    public enum CellType {
-        NORMAL,
-        EMPTY
-    }
-
     public int steps;
     public Map<ColorType, Integer> targetGoals = new HashMap<>();
     public CellType[][] grid;
-
-    public LevelData() {}
+    public LevelData() {
+    }
 
     public LevelData(int steps, int rows, int cols) {
         this.steps = steps;
@@ -24,5 +19,10 @@ public class LevelData {
                 grid[r][c] = CellType.NORMAL;
             }
         }
+    }
+
+    public enum CellType {
+        NORMAL,
+        EMPTY
     }
 }
