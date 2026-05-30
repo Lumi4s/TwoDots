@@ -34,11 +34,8 @@ public class InGame implements Screen {
     private static final Color DOT_DARK = new Color(0.173f, 0.243f, 0.314f, 1f);
     private static final Color CELL_EMPTY_COLOR = new Color(0.2f, 0.2f, 0.2f, 0.5f);
     private static final Color CELL_NORMAL_COLOR = new Color(0.9f, 0.9f, 0.9f, 0.1f);
-    // ── логика (всё что тестируется) ─────────────────────────────────────────
     final InGameController controller = new InGameController();
-    // ── rendering ────────────────────────────────────────────────────────────
     private final TwoDots game;
-    // ── input ────────────────────────────────────────────────────────────────
     private final InputAdapter input;
     private final ExtendViewport viewport;
     private final OrthographicCamera camera;
@@ -49,7 +46,6 @@ public class InGame implements Screen {
     private float gridX;
     private float gridY;
     private final Vector2 currentTouch = new Vector2();
-    // ── ui ───────────────────────────────────────────────────────────────────
     private final Stage uiStage;
     private final Skin skin;
     private final Table root;
@@ -61,7 +57,6 @@ public class InGame implements Screen {
     public InGame(TwoDots game) {
         this.game = game;
 
-        // controller слушает нас для обновления HUD и показа диалогов
         controller.setListener(new InGameController.Listener() {
             @Override
             public void onGoalsChanged() {

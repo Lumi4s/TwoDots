@@ -14,7 +14,6 @@ public class ButtonStyleFactory {
     public static Skin createBaseSkin(BitmapFont font) {
         Skin skin = new Skin();
 
-        // Белая текстура для стандартных элементов (если понадобятся)
         Pixmap pixmap = new Pixmap(1, 1, Pixmap.Format.RGBA8888);
         pixmap.setColor(Color.WHITE);
         pixmap.fill();

@@ -148,7 +148,6 @@ public class LVLEditorControllerTest {
 
     @Test
     void save_gridReflectsToggle(@TempDir Path tempDir) {
-        // Editor row=0 — верхняя строка UI, при сохранении флипается в row=5 (нижняя в игре)
         controller.toggleCell(0, 0);
         controller.toggleCell(3, 3);
 
